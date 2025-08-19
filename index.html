@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Skybox Cubemap Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 30px;
+        }
+        
+        .upload-section {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 2px dashed #4CAF50;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        
+        .upload-btn:hover {
+            background: #45a049;
+        }
+        
+        .preview-section {
+            display: none;
+            margin-bottom: 30px;
+        }
+        
+        .original-preview {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .original-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 5px;
+        }
+        
+        .cubemap-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .face-container {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .face-container h3 {
+            margin: 0 0 10px 0;
+            color: #4CAF50;
+            font-size: 14px;
+        }
+        
+        .face-container canvas {
+            width: 100%;
+            max-width: 200px;
+            height: auto;
+            border: 1px solid #555;
+        }
+        
+        .download-section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .download-btn {
+            background: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .download-btn:hover {
+            background: #1976D2;
+        }
+        
+        .download-all-btn {
+            background: #FF9800;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .download-all-btn:hover {
+            background: #F57C00;
+        }
+        
+        .instructions {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .instructions h3 {
+            color: #4CAF50;
+            margin-top: 0;
+        }
+        
+        .file-structure {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Minecraft Skybox Cubemap Generator</h1>
+        
+        <div class="upload-section">
+            <h2>Upload Your Sky Image</h2>
+            <p>Select your sky image to convert it into 6 cubemap faces for Minecraft Bedrock Edition</p>
+            <input type="file" id="imageInput" class="file-input" accept="image/*">
+            <button class="upload-btn" onclick="triggerFileInput()">Choose Image</button>
+            <div id="fileName" style="margin-top: 10px; color: #4CAF50;"></div>
+        </div>
+        
+        <div class="preview-section" id="previewSection">
+            <div class="original-preview">
+                <h3>Original Image</h3>
+                <img id="originalImage" alt="Original sky image">
+            </div>
+            
+            <h3>Cubemap Faces (256x256 each)</h3>
+            <div class="cubemap-grid">
+                <div class="face-container">
+                    <h3>cubemap_0.png<br>(Right/East)</h3>
+                    <canvas id="face0" width="256" height="256"></canvas>
+                </div>
+                <div class="face-container">
+                    <h3>cubemap_1.png<br>(Left/West)</h3>
+                    <canvas id="face1" width="256" height="256"></canvas>
+                </div>
+                <div class="face-container">
+                    <h3>cubemap_2.png<br>(Top/Up)</h3>
+                    <canvas id="face2" width="256" height="256"></canvas>
+                </div>
+                <div class="face-container">
+                    <h3>cubemap_3.png<br>(Bottom/Down)</h3>
+                    <canvas id="face3" width="256" height="256"></canvas>
+                </div>
+                <div class="face-container">
+                    <h3>cubemap_4.png<br>(Front/North)</h3>
+                    <canvas id="face4" width="256" height="256"></canvas>
+                </div>
+                <div class="face-container">
+                    <h3>cubemap_5.png<br>(Back/South)</h3>
+                    <canvas id="face5" width="256" height="256"></canvas>
+                </div>
+            </div>
+            
+            <div class="download-section">
+                <h3>Download Individual Faces</h3>
+                <button class="download-btn" onclick="downloadFace(0)">Download cubemap_0.png</button>
+                <button class="download-btn" onclick="downloadFace(1)">Download cubemap_1.png</button>
+                <button class="download-btn" onclick="downloadFace(2)">Download cubemap_2.png</button>
+                <button class="download-btn" onclick="downloadFace(3)">Download cubemap_3.png</button>
+                <button class="download-btn" onclick="downloadFace(4)">Download cubemap_4.png</button>
+                <button class="download-btn" onclick="downloadFace(5)">Download cubemap_5.png</button>
+                <br>
+                <button class="download-all-btn" onclick="downloadAllFaces()">Download All 6 Files</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>How to Use in Minecraft Bedrock Edition</h3>
+            <ol>
+                <li>Upload your sky image above</li>
+                <li>Download all 6 cubemap files</li>
+                <li>Create this folder structure in your resource pack:</li>
+            </ol>
+            
+            <div class="file-structure">
+MyResourcePack/
+├── manifest.json
+└── textures/
+    └── environment/
+        └── overworld_cubemap/
+            ├── cubemap_0.png
+            ├── cubemap_1.png
+            ├── cubemap_2.png
+            ├── cubemap_3.png
+            ├── cubemap_4.png
+            └── cubemap_5.png
+            </div>
+            
+            <h4>Sample manifest.json:</h4>
+            <div class="file-structure">
+{
+  "format_version": 2,
+  "header": {
+    "description": "Custom Sky Resource Pack",
+    "name": "Custom Sky",
+    "uuid": "12345678-1234-5678-9abc-123456789012",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 16, 0]
+  },
+  "modules": [
+    {
+      "description": "Custom Sky Resources",
+      "type": "resources",
+      "uuid": "87654321-4321-8765-cba9-210987654321",
+      "version": [1, 0, 0]
+    }
+  ]
+}
+            </div>
+            
+            <p><strong>Installation:</strong> Zip your resource pack folder, rename it to .mcpack, and import it into Minecraft Bedrock Edition through Settings → Global Resources.</p>
+        </div>
+    </div>
+    
+    <script>
+        let originalImage = null;
+        
+        function triggerFileInput() {
+            document.getElementById('imageInput').click();
+        }
+        
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        originalImage = img;
+                        document.getElementById('originalImage').src = e.target.result;
+                        document.getElementById('previewSection').style.display = 'block';
+                        generateCubemap();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Please select a valid image file.');
+                document.getElementById('fileName').textContent = '';
+            }
+        }
+        
+        document.getElementById('imageInput').addEventListener('change', handleFileSelect);
+        
+        function generateCubemap() {
+            if (!originalImage) return;
+            
+            const faces = [
+                { id: 'face0', name: 'Right' },   // East
+                { id: 'face1', name: 'Left' },    // West
+                { id: 'face2', name: 'Top' },     // Up
+                { id: 'face3', name: 'Bottom' },  // Down
+                { id: 'face4', name: 'Front' },   // North
+                { id: 'face5', name: 'Back' }     // South
+            ];
+            
+            faces.forEach((face, index) => {
+                const canvas = document.getElementById(face.id);
+                const ctx = canvas.getContext('2d');
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, 256, 256);
+                
+                // For a panoramic sky image, we'll map different sections to each face
+                generateFace(ctx, index, originalImage);
+            });
+        }
+        
+        function generateFace(ctx, faceIndex, img) {
+            const w = img.width;
+            const h = img.height;
+            
+            switch(faceIndex) {
+                case 0: // Right (East) - right portion of image
+                    ctx.drawImage(img, w * 0.75, 0, w * 0.25, h, 0, 0, 256, 256);
+                    break;
+                case 1: // Left (West) - left portion of image
+                    ctx.drawImage(img, 0, 0, w * 0.25, h, 0, 0, 256, 256);
+                    break;
+                case 2: // Top (Up) - upper portion, stretched
+                    ctx.drawImage(img, 0, 0, w, h * 0.3, 0, 0, 256, 256);
+                    break;
+                case 3: // Bottom (Down) - lower portion with clouds
+                    ctx.drawImage(img, 0, h * 0.7, w, h * 0.3, 0, 0, 256, 256);
+                    break;
+                case 4: // Front (North) - center portion of image
+                    ctx.drawImage(img, w * 0.25, 0, w * 0.5, h, 0, 0, 256, 256);
+                    break;
+                case 5: // Back (South) - mirror/variation of center
+                    ctx.save();
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(img, w * 0.25, 0, w * 0.5, h, -256, 0, 256, 256);
+                    ctx.restore();
+                    break;
+            }
+        }
+        
+        function downloadFace(faceIndex) {
+            const canvas = document.getElementById(`face${faceIndex}`);
+            const link = document.createElement('a');
+            link.download = `cubemap_${faceIndex}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        function downloadAllFaces() {
+            for (let i = 0; i < 6; i++) {
+                setTimeout(() => downloadFace(i), i * 200);
+            }
+        }
+    </script>
+</body>
+</html>
