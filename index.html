@@ -319,31 +319,69 @@ MyResourcePack/
         }
         
         function generateFace(ctx, faceIndex, img) {
-            const w = img.width;
-            const h = img.height;
+            const size = 256;
+            const imgData = ctx.createImageData(size, size);
+            const data = imgData.data;
             
-            switch(faceIndex) {
-                case 0: // Right (East) - right portion of image
-                    ctx.drawImage(img, w * 0.75, 0, w * 0.25, h, 0, 0, 256, 256);
-                    break;
-                case 1: // Left (West) - left portion of image
-                    ctx.drawImage(img, 0, 0, w * 0.25, h, 0, 0, 256, 256);
-                    break;
-                case 2: // Top (Up) - upper portion, stretched
-                    ctx.drawImage(img, 0, 0, w, h * 0.3, 0, 0, 256, 256);
-                    break;
-                case 3: // Bottom (Down) - lower portion with clouds
-                    ctx.drawImage(img, 0, h * 0.7, w, h * 0.3, 0, 0, 256, 256);
-                    break;
-                case 4: // Front (North) - center portion of image
-                    ctx.drawImage(img, w * 0.25, 0, w * 0.5, h, 0, 0, 256, 256);
-                    break;
-                case 5: // Back (South) - mirror/variation of center
-                    ctx.save();
-                    ctx.scale(-1, 1);
-                    ctx.drawImage(img, w * 0.25, 0, w * 0.5, h, -256, 0, 256, 256);
-                    ctx.restore();
-                    break;
+            // Create a temporary canvas to sample from the source image
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = img.width;
+            tempCanvas.height = img.height;
+            tempCtx.drawImage(img, 0, 0);
+            const sourceData = tempCtx.getImageData(0, 0, img.width, img.height);
+            
+            // Convert each pixel in the cube face to spherical coordinates
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const u = (x / (size - 1)) * 2 - 1; // -1 to 1
+                    const v = (y / (size - 1)) * 2 - 1; // -1 to 1
+                    
+                    // Convert cube face coordinates to 3D direction vector
+                    let dir = getCubeDirection(faceIndex, u, -v); // flip v for correct orientation
+                    
+                    // Convert 3D direction to spherical coordinates
+                    const theta = Math.atan2(dir.z, dir.x); // longitude
+                    const phi = Math.acos(dir.y); // latitude
+                    
+                    // Map spherical coordinates to image coordinates
+                    const srcX = Math.floor(((theta + Math.PI) / (2 * Math.PI)) * img.width);
+                    const srcY = Math.floor((phi / Math.PI) * img.height);
+                    
+                    // Clamp coordinates
+                    const clampedX = Math.max(0, Math.min(img.width - 1, srcX));
+                    const clampedY = Math.max(0, Math.min(img.height - 1, srcY));
+                    
+                    // Sample pixel from source
+                    const srcIndex = (clampedY * img.width + clampedX) * 4;
+                    const dstIndex = (y * size + x) * 4;
+                    
+                    data[dstIndex] = sourceData.data[srcIndex];         // R
+                    data[dstIndex + 1] = sourceData.data[srcIndex + 1]; // G
+                    data[dstIndex + 2] = sourceData.data[srcIndex + 2]; // B
+                    data[dstIndex + 3] = 255; // A
+                }
+            }
+            
+            ctx.putImageData(imgData, 0, 0);
+        }
+        
+        function getCubeDirection(face, u, v) {
+            switch (face) {
+                case 0: // Right (+X)
+                    return { x: 1, y: v, z: -u };
+                case 1: // Left (-X)
+                    return { x: -1, y: v, z: u };
+                case 2: // Top (+Y)
+                    return { x: u, y: 1, z: v };
+                case 3: // Bottom (-Y)
+                    return { x: u, y: -1, z: -v };
+                case 4: // Front (+Z)
+                    return { x: u, y: v, z: 1 };
+                case 5: // Back (-Z)
+                    return { x: -u, y: v, z: -1 };
+                default:
+                    return { x: 0, y: 0, z: 1 };
             }
         }
         
